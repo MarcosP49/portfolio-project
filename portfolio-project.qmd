@@ -1,0 +1,67 @@
+---
+title: "portfolio-part-2"
+format: html
+editor: visual
+---
+
+> I decided to switch my dataset, since I felt the previous one was too easy and limiting to what I could do with it. This portfolio part and future ones will use this new dataset.
+
+# 1.1
+
+> My dataset is the UNESCO Worldd Inequality of Education dataset, and one of the research questions I have is what geographical spots are the best and worst for education. By this, I do not mean just singular countries, but regions that are considered the best and possible other statistics that can explain why these regions are the best. The data has a lot of variables about proportion of students who graduate primary, secondary, and high school. It also has some data specific to sex, so ddifferences between male and female education in countries can be shown. The data contains NA's for some specific countries that were unavailable to get all the information for, so that will have to be worked around. I want to create a scatterplot that highlight certain very good or bad countries in education. Along with this, I want to potentially create a map of the world that shows the differences in edducation around the world.
+
+# 1.2
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+data_raw <- suppressWarnings(
+  suppressMessages(
+    readr::read_csv("Data-raw/UNESCO.csv", show_col_types = FALSE)
+  )
+)
+metadata <- suppressMessages(readr::read_csv("Data-raw/UNESCO-meta.csv", show_col_types = FALSE))
+
+# I want to look at sex for one of the visualizations, so the first change I'll make is to get a dataset that removes NAs from that column
+
+data_sex <- data_raw |>
+  filter(!is.na(sex)) |>
+  filter(category == "Sex")
+
+# Looking pre and post covid could yield interesting results as well, so I'll make a dataset that seperates the 2 with a category
+
+data_covid <- data_raw |>
+  filter(!is.na(year)) |>
+  mutate(precovid = if_else(year < 2020, "Pre", "Post"))
+
+## Finally, I'll have a dataset that arranges the data by region group
+
+data_region <- data_raw |>
+  filter(!is.na(region)) |>
+  arrange(region_group)
+
+write.csv(data_sex, "Data-clean/data-sex.csv")
+write.csv(data_covid, "Data-clean/data-covid.csv")
+write.csv(data_region, "Data-clean/data-region.csv")
+```
+
+# 1.3
+
+```{r}
+# I'll make a draft of the plot for different regions
+
+data_region = read_csv("Data-clean/data-region.csv")
+
+medians <- data_region %>%
+  group_by(region_group) %>%
+  summarise(median_value = median(comp_upsec_2029_m, na.rm = TRUE))
+ggplot(data = data_region, aes(y = region_group, x = comp_upsec_2029_m, color = region_group)) +
+  geom_violin(trim = FALSE, width = 1.7) +
+  labs(x = "Proportion of Upper Secondary Completion for Aged 20-29", y = "Region Group") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  xlim(0, 1)
+
+# I want to add a bar at the median values but am unsure how to, also I want to be able to fix the legend title
+
+```
+
